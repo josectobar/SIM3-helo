@@ -61,14 +61,59 @@ module.exports = {
         }
     },
     getPosts: async ( req, res ) => {
+        try{
+            const db = req.app.get('db')
+            let { search, userPosts } = req.query
+            const { id } = req.session.user
+            userPosts = JSON.parse(userPosts)
+            if (search && userPosts ) {
+                const postQuery = await db.queries.get_posts_search_true(search, id)
+                res.status(200).send(postQuery)
+            } else if (search && !userPosts ) {
+                const postQuery = await db.queries.get_posts_search_false(search, id)
+                res.status(200).send(postQuery)
+            } else if (!search && userPosts) {
+                const postQuery = await db.queries.get_posts()
+                res.status(200).send(postQuery)
+            } else {
+                const postQuery = await db.queries.get_posts_false(id)
+                res.status(200).send(postQuery)
+            }
+        } catch (err) {
+            console.log(err)
+            res.sendStatus(401)
+        }
+    },
+    getPost: async (req, res) => {
         const db = req.app.get('db')
-        const { search, userPosts } = req.query
-        const { id } = req.params
-        console.log(res.query)
-        const postQuery = await db.run("select * from posts")
-        res.status(200).send(postQuery)
-        // if (search !== '' && userPosts ) {
+        const { postid } = req.params
+        const post = await db.queries.get_post(postid)
+        res.status(200).send(post)
+    },
+    newPost: async (req, res) => {
+        try {
+            const db = req.app.get('db')
+            const { title, img, content } = req.body
+            const { id } = req.session.user
+            let newPost = await db.new_post({title, img, content, author_id: id})
+            res.status(200).send(newPost)
+        } catch (err) {
+            res.sendStatus(500)
+        }
+    },
 
-        // }
+    me: async (req, res) => {
+        const db = req.app.get('db')
+        if (req.session.user) {
+            const { id } = req.session.user
+            let user = await db.user_info({id})
+            return res.status(200).send(user)
+        } else {
+            res.sendStatus(401)
+        }
+    },
+    logout: (req, res) => {
+        req.session.destroy()
+        res.sendStatus(200)
     }
 }

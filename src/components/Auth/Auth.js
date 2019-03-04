@@ -18,7 +18,6 @@ class Auth extends Component {
     handleRegister = async () =>  {
         try {
             let res = await axios.post('/auth/register', this.state)
-            this.clearState()
             this.props.updateUser(res.data)
             this.props.history.push('/dashboard')
         } catch(err) {
@@ -71,7 +70,6 @@ class Auth extends Component {
                     onClick={this.handleRegister}>
                     Register
                 </button>
-                
             </div>
         );
     }
